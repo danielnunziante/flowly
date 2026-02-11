@@ -2,20 +2,14 @@
   "version": "1.0",
   "states": {
     "MENU": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Hola {{name}} 👋\nSoy el asistente de *COBERSER S.A.*\n\nAntes de empezar, ¿ya sos cliente?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Inicio",
-        "button_text": "Elegir opción",
         "footer": "",
-        "sections": [
-          {
-            "title": "Identificación",
-            "rows": [
-              { "id": "SOY_CLIENTE", "title": "Sí, ya soy cliente", "description": "Consultas de póliza, pagos y siniestros" },
-              { "id": "NO_SOY_CLIENTE", "title": "No, quiero información", "description": "Cotizar o conocer coberturas" }
-            ]
-          }
+        "buttons": [
+          { "id": "SOY_CLIENTE", "title": "Sí, soy cliente" },
+          { "id": "NO_SOY_CLIENTE", "title": "No, quiero info" }
         ]
       },
       "on_select_next": {
@@ -120,21 +114,15 @@
     },
 
     "LEAD_CONTACT_PREF": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "¡Gracias! ✅\n\n¿Cómo preferís que te contactemos para avanzar con la cotización?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Contacto",
-        "button_text": "Elegir",
         "footer": "Elegí una opción.",
-        "sections": [
-          {
-            "title": "Preferencia",
-            "rows": [
-              { "id": "CONTACT_WPP", "title": "Por WhatsApp", "description": "Seguimos por acá" },
-              { "id": "CONTACT_CALL", "title": "Llamada telefónica", "description": "Te llamamos en un horario" },
-              { "id": "CONTACT_EMAIL", "title": "Email", "description": "Te pedimos tu correo" }
-            ]
-          }
+        "buttons": [
+          { "id": "CONTACT_WPP", "title": "Por WhatsApp" },
+          { "id": "CONTACT_CALL", "title": "Llamada telefónica" },
+          { "id": "CONTACT_EMAIL", "title": "Email" }
         ]
       },
       "on_select_next": {
@@ -157,20 +145,14 @@
     },
 
     "LEAD_DONE_WPP": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Listo 🙌\nYa registré tu consulta. En breve te respondemos por este WhatsApp con opciones y/o preguntas finales.\n\n¿Querés hacer algo más ahora?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Siguiente paso",
-        "button_text": "Ver opciones",
         "footer": "Podés volver cuando quieras.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "OTRO_SERVICIO", "title": "Consultar otro servicio", "description": "Ver servicios nuevamente" },
-              { "id": "FIN", "title": "Finalizar", "description": "Eso era todo" }
-            ]
-          }
+        "buttons": [
+          { "id": "OTRO_SERVICIO", "title": "Otro servicio" },
+          { "id": "FIN", "title": "Finalizar" }
         ]
       },
       "on_select_next": {
@@ -180,20 +162,14 @@
     },
 
     "LEAD_DONE_CALL": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Perfecto ✅\nQuedó agendado para que un asesor te contacte en el horario que indicaste.\n\n¿Querés consultar otro servicio mientras tanto?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Listo",
-        "button_text": "Elegir",
         "footer": "Gracias por escribirnos.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "OTRO_SERVICIO", "title": "Sí, otro servicio", "description": "Volver a servicios" },
-              { "id": "FIN", "title": "No, gracias", "description": "Finalizar" }
-            ]
-          }
+        "buttons": [
+          { "id": "OTRO_SERVICIO", "title": "Sí, otro servicio" },
+          { "id": "FIN", "title": "No, gracias" }
         ]
       },
       "on_select_next": {
@@ -203,20 +179,14 @@
     },
 
     "LEAD_DONE_EMAIL": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "¡Gracias! ✅\nTe contactaremos por email con la propuesta o para pedirte algún dato adicional.\n\n¿Querés consultar otro servicio?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Listo",
-        "button_text": "Elegir",
         "footer": "Seguimos cuando quieras.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "OTRO_SERVICIO", "title": "Sí, otro servicio", "description": "Volver a servicios" },
-              { "id": "FIN", "title": "No, gracias", "description": "Finalizar" }
-            ]
-          }
+        "buttons": [
+          { "id": "OTRO_SERVICIO", "title": "Sí, otro servicio" },
+          { "id": "FIN", "title": "No, gracias" }
         ]
       },
       "on_select_next": {
@@ -268,20 +238,14 @@
     },
 
     "CLIENT_POLICY_RESULT": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "¡Gracias! ✅\nYa registré tu consulta de *estado de póliza* para que te respondamos con toda la información actualizada.\n\n¿Querés hacer otra consulta?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Clientes",
-        "button_text": "Elegir",
         "footer": "Seguimos por acá.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú", "description": "Ver opciones" },
-              { "id": "FIN", "title": "Finalizar", "description": "Eso era todo" }
-            ]
-          }
+        "buttons": [
+          { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú" },
+          { "id": "FIN", "title": "Finalizar" }
         ]
       },
       "on_select_next": {
@@ -297,20 +261,14 @@
     },
 
     "CLIENT_PAYMENTS_RESULT": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Listo ✅\nRegistré tu consulta de *pagos/cuotas*. Te respondemos con vencimientos, estado y medios de pago disponibles.\n\n¿Algo más?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Clientes",
-        "button_text": "Elegir",
         "footer": "Gracias.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú", "description": "Ver opciones" },
-              { "id": "FIN", "title": "Finalizar", "description": "Eso era todo" }
-            ]
-          }
+        "buttons": [
+          { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú" },
+          { "id": "FIN", "title": "Finalizar" }
         ]
       },
       "on_select_next": {
@@ -326,20 +284,14 @@
     },
 
     "CLIENT_CLAIMS_STATUS_RESULT": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Gracias ✅\nRegistré tu consulta del *estado de siniestro*. Te respondemos con el avance y los próximos pasos.\n\n¿Algo más?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Clientes",
-        "button_text": "Elegir",
         "footer": "Seguimos en este chat.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú", "description": "Ver opciones" },
-              { "id": "FIN", "title": "Finalizar", "description": "Eso era todo" }
-            ]
-          }
+        "buttons": [
+          { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú" },
+          { "id": "FIN", "title": "Finalizar" }
         ]
       },
       "on_select_next": {
@@ -349,20 +301,14 @@
     },
 
     "CLAIM_URGENT_CHECK": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Vamos con el siniestro 🚨\nPrimero: ¿hay *lesionados*, riesgo inmediato o emergencia?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Siniestros",
-        "button_text": "Elegir",
         "footer": "Si estás en peligro, priorizá tu seguridad.",
-        "sections": [
-          {
-            "title": "Urgencia",
-            "rows": [
-              { "id": "CLAIM_URGENT_YES", "title": "Sí, es urgente", "description": "Lesiones / riesgo / emergencia" },
-              { "id": "CLAIM_URGENT_NO", "title": "No, no es urgente", "description": "Podemos cargar el siniestro" }
-            ]
-          }
+        "buttons": [
+          { "id": "CLAIM_URGENT_YES", "title": "Sí, es urgente" },
+          { "id": "CLAIM_URGENT_NO", "title": "No es urgente" }
         ]
       },
       "on_select_next": {
@@ -378,20 +324,14 @@
     },
 
     "CLAIM_URGENT_RECEIVED": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Recibido ✅\nRegistré el siniestro como *urgente* para gestión prioritaria.\n\n¿Querés seguir cargando más detalles ahora?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Siniestros",
-        "button_text": "Elegir",
         "footer": "Si podés, ayuda mucho sumar datos/fotos.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "CLAIM_CONTINUE", "title": "Sí, cargar más detalles", "description": "Seguimos con el formulario" },
-              { "id": "CLAIM_LATER", "title": "No, por ahora no", "description": "Volver al menú" }
-            ]
-          }
+        "buttons": [
+          { "id": "CLAIM_CONTINUE", "title": "Cargar más detalles" },
+          { "id": "CLAIM_LATER", "title": "Ahora no" }
         ]
       },
       "on_select_next": {
@@ -460,20 +400,14 @@
     },
 
     "CLAIM_RECEIVED": {
-      "type": "interactive_list",
+      "type": "interactive_buttons",
       "body": "Listo ✅\nRegistré tu *nuevo siniestro*.\n\nPara avanzar más rápido, si tenés *fotos, denuncia o documentación*, podés enviarlas en este chat.\n\n¿Querés hacer algo más?",
-      "list": {
+      "buttons": {
         "header": "COBERSER - Siniestros",
-        "button_text": "Elegir",
         "footer": "Gracias por la info.",
-        "sections": [
-          {
-            "title": "Opciones",
-            "rows": [
-              { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú", "description": "Otras consultas" },
-              { "id": "FIN", "title": "Finalizar", "description": "Eso era todo" }
-            ]
-          }
+        "buttons": [
+          { "id": "VOLVER_CLIENT_MENU", "title": "Volver al menú" },
+          { "id": "FIN", "title": "Finalizar" }
         ]
       },
       "on_select_next": {

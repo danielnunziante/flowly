@@ -329,6 +329,32 @@ func (r *TenantResolver) Resolve(phoneNumberID string) string {
 // WhatsApp client (Cloud API)
 // ---------------------
 
+func normalizeRecipientForMeta(to string) string {
+	// Normaliza para WhatsApp Cloud API (test) — Argentina:
+	// wa_id suele venir como 549XXXXXXXXXX, pero en el "allowed list" / test env
+	// muchas veces Meta espera 54XXXXXXXXXX (sin el 9).
+	//
+	// Importante: solo aplicar fuera de prod (en prod esto puede no ser necesario).
+	env := strings.TrimSpace(os.Getenv("APP_ENV"))
+	if env == "" {
+		env = "dev"
+	}
+	if env == "prod" {
+		return to
+	}
+
+	// Meta espera el número sin "+"
+	to = strings.TrimSpace(to)
+	to = strings.TrimPrefix(to, "+")
+
+	// AR workaround: 549... -> 54...
+	if strings.HasPrefix(to, "549") && len(to) > 3 {
+		return "54" + to[3:]
+	}
+
+	return to
+}
+
 type WhatsAppClient struct {
 	token      string
 	phoneID    string
@@ -365,6 +391,7 @@ func (c *WhatsAppClient) sendText(to string, body string) error {
 		log.Printf("⚠️ WHATSAPP_FORCE_TO activo: to_original=%s to_forzado=%s", toOriginal, c.forceTo)
 		to = c.forceTo
 	}
+	to = normalizeRecipientForMeta(to)
 	payload := map[string]any{
 		"messaging_product": "whatsapp",
 		"to":                to,
@@ -382,6 +409,7 @@ func (c *WhatsAppClient) sendList(to string, header, body, footer, buttonText st
 		log.Printf("⚠️ WHATSAPP_FORCE_TO activo: to_original=%s to_forzado=%s", toOriginal, c.forceTo)
 		to = c.forceTo
 	}
+	to = normalizeRecipientForMeta(to)
 
 	waSections := make([]map[string]any, 0, len(sections))
 	for _, s := range sections {
