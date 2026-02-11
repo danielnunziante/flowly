@@ -136,7 +136,8 @@ type FlowState struct {
 	Body string `json:"body"`
 
 	// List UI
-	List *FlowList `json:"list,omitempty"`
+	List    *FlowList    `json:"list,omitempty"`
+	Buttons *FlowButtons `json:"buttons,omitempty"`
 
 	// Transiciones
 	OnTextNext   string            `json:"on_text_next,omitempty"`
@@ -159,6 +160,17 @@ type FlowRow struct {
 	ID          string `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+}
+
+type FlowButtons struct {
+	Header  string       `json:"header"`
+	Footer  string       `json:"footer"`
+	Buttons []FlowButton `json:"buttons"`
+}
+
+type FlowButton struct {
+	ID    string `json:"id"`
+	Title string `json:"title"`
 }
 
 // ---------------------
@@ -247,37 +259,88 @@ func validateFlowConfig(tenant string, cfg FlowConfig) error {
 	var errs []string
 
 	for stateName, st := range cfg.States {
-		if st.Type != "interactive_list" || st.List == nil {
+
+		// -------------------------
+		// interactive_list
+		// -------------------------
+		if st.Type == "interactive_list" {
+			if st.List == nil {
+				errs = append(errs, fmt.Sprintf("state=%s es interactive_list pero list es nil", stateName))
+				continue
+			}
+			l := st.List
+
+			if runeLen(l.Header) > 60 {
+				errs = append(errs, fmt.Sprintf("state=%s header > 60 (%d): %q", stateName, runeLen(l.Header), l.Header))
+			}
+			if runeLen(l.Footer) > 60 {
+				errs = append(errs, fmt.Sprintf("state=%s footer > 60 (%d): %q", stateName, runeLen(l.Footer), l.Footer))
+			}
+			if runeLen(l.ButtonText) > 20 {
+				errs = append(errs, fmt.Sprintf("state=%s button_text > 20 (%d): %q", stateName, runeLen(l.ButtonText), l.ButtonText))
+			}
+
+			for _, sec := range l.Sections {
+				if runeLen(sec.Title) > 24 {
+					errs = append(errs, fmt.Sprintf("state=%s section title > 24 (%d): %q", stateName, runeLen(sec.Title), sec.Title))
+				}
+				for _, row := range sec.Rows {
+					if strings.TrimSpace(row.ID) == "" {
+						errs = append(errs, fmt.Sprintf("state=%s row id vacío (title=%q)", stateName, row.Title))
+					}
+					if runeLen(row.Title) > 24 {
+						errs = append(errs, fmt.Sprintf("state=%s row title > 24 (%d): %q", stateName, runeLen(row.Title), row.Title))
+					}
+					if runeLen(row.Description) > 72 {
+						errs = append(errs, fmt.Sprintf("state=%s row desc > 72 (%d): %q", stateName, runeLen(row.Description), row.Description))
+					}
+				}
+			}
+
 			continue
 		}
-		l := st.List
 
-		if runeLen(l.Header) > 60 {
-			errs = append(errs, fmt.Sprintf("state=%s header > 60 (%d): %q", stateName, runeLen(l.Header), l.Header))
-		}
-		if runeLen(l.Footer) > 60 {
-			errs = append(errs, fmt.Sprintf("state=%s footer > 60 (%d): %q", stateName, runeLen(l.Footer), l.Footer))
-		}
-		if runeLen(l.ButtonText) > 20 {
-			errs = append(errs, fmt.Sprintf("state=%s button_text > 20 (%d): %q", stateName, runeLen(l.ButtonText), l.ButtonText))
+		// -------------------------
+		// interactive_buttons
+		// -------------------------
+		if st.Type == "interactive_buttons" {
+			if st.Buttons == nil {
+				errs = append(errs, fmt.Sprintf("state=%s es interactive_buttons pero buttons es nil", stateName))
+				continue
+			}
+			b := st.Buttons
+
+			// Header/Footer: límites similares a list (siempre conviene mantenerlos cortos)
+			if runeLen(b.Header) > 60 {
+				errs = append(errs, fmt.Sprintf("state=%s buttons.header > 60 (%d): %q", stateName, runeLen(b.Header), b.Header))
+			}
+			if runeLen(b.Footer) > 60 {
+				errs = append(errs, fmt.Sprintf("state=%s buttons.footer > 60 (%d): %q", stateName, runeLen(b.Footer), b.Footer))
+			}
+
+			// Botones: 1..3
+			if len(b.Buttons) == 0 {
+				errs = append(errs, fmt.Sprintf("state=%s no tiene buttons (debe tener 1 a 3)", stateName))
+				continue
+			}
+			if len(b.Buttons) > 3 {
+				errs = append(errs, fmt.Sprintf("state=%s tiene %d botones (>3)", stateName, len(b.Buttons)))
+			}
+
+			for _, btn := range b.Buttons {
+				if strings.TrimSpace(btn.ID) == "" {
+					errs = append(errs, fmt.Sprintf("state=%s button id vacío (title=%q)", stateName, btn.Title))
+				}
+				// Título de botón: recomendación segura <= 20
+				if runeLen(btn.Title) > 20 {
+					errs = append(errs, fmt.Sprintf("state=%s button title > 20 (%d): %q", stateName, runeLen(btn.Title), btn.Title))
+				}
+			}
+
+			continue
 		}
 
-		for _, sec := range l.Sections {
-			if runeLen(sec.Title) > 24 {
-				errs = append(errs, fmt.Sprintf("state=%s section title > 24 (%d): %q", stateName, runeLen(sec.Title), sec.Title))
-			}
-			for _, row := range sec.Rows {
-				if row.ID == "" {
-					errs = append(errs, fmt.Sprintf("state=%s row id vacío (title=%q)", stateName, row.Title))
-				}
-				if runeLen(row.Title) > 24 {
-					errs = append(errs, fmt.Sprintf("state=%s row title > 24 (%d): %q", stateName, runeLen(row.Title), row.Title))
-				}
-				if runeLen(row.Description) > 72 {
-					errs = append(errs, fmt.Sprintf("state=%s row desc > 72 (%d): %q", stateName, runeLen(row.Description), row.Description))
-				}
-			}
-		}
+		// Para otros tipos ("text"), no validamos UI acá.
 	}
 
 	if len(errs) > 0 {
@@ -465,6 +528,57 @@ func (c *WhatsAppClient) sendList(to string, header, body, footer, buttonText st
 	return c.post(payload)
 }
 
+func (c *WhatsAppClient) sendButtons(to string, header, body, footer string, buttons []FlowButton) error {
+	toOriginal := to
+	if c.forceTo != "" {
+		log.Printf("⚠️ WHATSAPP_FORCE_TO activo: to_original=%s to_forzado=%s", toOriginal, c.forceTo)
+		to = c.forceTo
+	}
+
+	waButtons := make([]map[string]any, 0, len(buttons))
+	for _, b := range buttons {
+		waButtons = append(waButtons, map[string]any{
+			"type": "reply",
+			"reply": map[string]any{
+				"id":    b.ID,
+				"title": b.Title,
+			},
+		})
+	}
+
+	interactive := map[string]any{
+		"type": "button",
+		"body": map[string]any{
+			"text": body,
+		},
+		"action": map[string]any{
+			"buttons": waButtons,
+		},
+	}
+
+	if strings.TrimSpace(header) != "" {
+		interactive["header"] = map[string]any{
+			"type": "text",
+			"text": header,
+		}
+	}
+
+	if strings.TrimSpace(footer) != "" {
+		interactive["footer"] = map[string]any{
+			"text": footer,
+		}
+	}
+
+	payload := map[string]any{
+		"messaging_product": "whatsapp",
+		"to":                to,
+		"type":              "interactive",
+		"interactive":       interactive,
+	}
+
+	return c.post(payload)
+}
+
 func (c *WhatsAppClient) post(payload map[string]any) error {
 	b, _ := json.Marshal(payload)
 	req, err := http.NewRequest("POST", c.apiBaseURL, bytes.NewReader(b))
@@ -555,6 +669,30 @@ func (r *Renderer) RenderAndSend(tenant string, stateName string, wa *WhatsAppCl
 		}
 
 		return wa.sendList(to, header, bodyText, footer, button, sections)
+
+	case "interactive_buttons":
+		if st.Buttons == nil {
+			return fmt.Errorf("estado %s es interactive_buttons pero buttons es nil", stateName)
+		}
+
+		bodyText := strings.TrimSpace(st.Body)
+		if bodyText == "" {
+			bodyText = "Elegí una opción:"
+		}
+		bodyText = renderVars(bodyText, vars)
+
+		header := renderVars(st.Buttons.Header, vars)
+		footer := renderVars(st.Buttons.Footer, vars)
+
+		btns := make([]FlowButton, 0, len(st.Buttons.Buttons))
+		for _, b := range st.Buttons.Buttons {
+			btns = append(btns, FlowButton{
+				ID:    b.ID,
+				Title: renderVars(b.Title, vars),
+			})
+		}
+
+		return wa.sendButtons(to, header, bodyText, footer, btns)
 
 	default:
 		return fmt.Errorf("tipo de estado no soportado: %s", st.Type)
