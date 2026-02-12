@@ -7,8 +7,11 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"mime"
 	"net/http"
+	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -75,6 +78,36 @@ func renderVars(s string, vars map[string]string) string {
 	return s
 }
 
+// ---------------------
+// HTTP Public Url
+// ---------------------
+// buildPublicAssetURL arma una URL pública https para un asset del tenant.
+// Espera que el archivo exista en: configs/{tenant}/assets/{path}
+// Y que esté expuesto por HTTP en: /tenants/{tenant}/assets/{path}
+func buildPublicAssetURL(tenant string, assetPath string) (string, error) {
+	base := strings.TrimRight(os.Getenv("PUBLIC_BASE_URL"), "/")
+	if base == "" {
+		return "", fmt.Errorf("PUBLIC_BASE_URL no está configurada")
+	}
+
+	assetPath = strings.TrimLeft(assetPath, "/")
+	clean := path.Clean(assetPath)
+
+	// Seguridad: evitar traversal (..)
+	if clean == "." || strings.HasPrefix(clean, "..") || strings.Contains(clean, "../") {
+		return "", fmt.Errorf("assetPath inválido: %q", assetPath)
+	}
+
+	// Escapar segmentos para URL (por si hay espacios, etc.)
+	parts := strings.Split(clean, "/")
+	for i := range parts {
+		parts[i] = url.PathEscape(parts[i])
+	}
+	escapedPath := strings.Join(parts, "/")
+
+	return fmt.Sprintf("%s/tenants/%s/assets/%s", base, url.PathEscape(tenant), escapedPath), nil
+}
+
 type WebhookPayload struct {
 	Object string `json:"object"`
 	Entry  []struct {
@@ -132,10 +165,13 @@ type FlowConfig struct {
 }
 
 type FlowState struct {
-	Type string `json:"type"` // "text" | "interactive_list"
+	Type string `json:"type"` // "text" | "interactive_list" | "interactive_buttons"
 	Body string `json:"body"`
 
-	// List UI
+	// Optional header media for interactive messages (e.g. image header)
+	HeaderMedia *FlowHeaderMedia `json:"header_media,omitempty"`
+
+	// List / Buttons UI
 	List    *FlowList    `json:"list,omitempty"`
 	Buttons *FlowButtons `json:"buttons,omitempty"`
 
@@ -171,6 +207,12 @@ type FlowButtons struct {
 type FlowButton struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
+}
+
+type FlowHeaderMedia struct {
+	Type string `json:"type"`           // "image" (extendible)
+	Path string `json:"path,omitempty"` // local: relative to configs/{tenant}/assets/
+	URL  string `json:"url,omitempty"`  // remote: absolute https://...
 }
 
 // ---------------------
@@ -259,6 +301,21 @@ func validateFlowConfig(tenant string, cfg FlowConfig) error {
 	var errs []string
 
 	for stateName, st := range cfg.States {
+
+		// -------------------------
+		// header_media validation (interactive only)
+		// -------------------------
+		if st.HeaderMedia != nil {
+			mt := strings.ToLower(strings.TrimSpace(st.HeaderMedia.Type))
+			if mt == "" {
+				errs = append(errs, fmt.Sprintf("state=%s header_media.type vacío", stateName))
+			} else if mt != "image" {
+				errs = append(errs, fmt.Sprintf("state=%s header_media.type no soportado: %q", stateName, st.HeaderMedia.Type))
+			}
+			if strings.TrimSpace(st.HeaderMedia.URL) == "" && strings.TrimSpace(st.HeaderMedia.Path) == "" {
+				errs = append(errs, fmt.Sprintf("state=%s header_media requiere url o path", stateName))
+			}
+		}
 
 		// -------------------------
 		// interactive_list
@@ -466,7 +523,7 @@ func (c *WhatsAppClient) sendText(to string, body string) error {
 	return c.post(payload)
 }
 
-func (c *WhatsAppClient) sendList(to string, header, body, footer, buttonText string, sections []FlowSection) error {
+func (c *WhatsAppClient) sendList(to string, headerText, headerImageURL, body, footer, buttonText string, sections []FlowSection) error {
 	toOriginal := to
 	if c.forceTo != "" {
 		log.Printf("⚠️ WHATSAPP_FORCE_TO activo: to_original=%s to_forzado=%s", toOriginal, c.forceTo)
@@ -505,10 +562,17 @@ func (c *WhatsAppClient) sendList(to string, header, body, footer, buttonText st
 		},
 	}
 
-	if strings.TrimSpace(header) != "" {
+	if strings.TrimSpace(headerImageURL) != "" {
+		interactive["header"] = map[string]any{
+			"type": "image",
+			"image": map[string]any{
+				"link": headerImageURL,
+			},
+		}
+	} else if strings.TrimSpace(headerText) != "" {
 		interactive["header"] = map[string]any{
 			"type": "text",
-			"text": header,
+			"text": headerText,
 		}
 	}
 
@@ -528,12 +592,14 @@ func (c *WhatsAppClient) sendList(to string, header, body, footer, buttonText st
 	return c.post(payload)
 }
 
-func (c *WhatsAppClient) sendButtons(to string, header, body, footer string, buttons []FlowButton) error {
+func (c *WhatsAppClient) sendButtons(to string, headerText, headerImageURL, body, footer string, buttons []FlowButton) error {
 	toOriginal := to
 	if c.forceTo != "" {
 		log.Printf("⚠️ WHATSAPP_FORCE_TO activo: to_original=%s to_forzado=%s", toOriginal, c.forceTo)
 		to = c.forceTo
 	}
+
+	to = normalizeRecipientForMeta(to)
 
 	waButtons := make([]map[string]any, 0, len(buttons))
 	for _, b := range buttons {
@@ -556,10 +622,17 @@ func (c *WhatsAppClient) sendButtons(to string, header, body, footer string, but
 		},
 	}
 
-	if strings.TrimSpace(header) != "" {
+	if strings.TrimSpace(headerImageURL) != "" {
+		interactive["header"] = map[string]any{
+			"type": "image",
+			"image": map[string]any{
+				"link": headerImageURL,
+			},
+		}
+	} else if strings.TrimSpace(headerText) != "" {
 		interactive["header"] = map[string]any{
 			"type": "text",
-			"text": header,
+			"text": headerText,
 		}
 	}
 
@@ -647,9 +720,23 @@ func (r *Renderer) RenderAndSend(tenant string, stateName string, wa *WhatsAppCl
 		bodyText = renderVars(bodyText, vars)
 
 		// Render vars también en UI del list
-		header := renderVars(st.List.Header, vars)
+		headerText := renderVars(st.List.Header, vars)
 		footer := renderVars(st.List.Footer, vars)
 		button := renderVars(st.List.ButtonText, vars)
+
+		// Optional: header media (image) for interactive messages
+		headerImageURL := ""
+		if st.HeaderMedia != nil && strings.EqualFold(st.HeaderMedia.Type, "image") {
+			if strings.TrimSpace(st.HeaderMedia.URL) != "" {
+				headerImageURL = strings.TrimSpace(st.HeaderMedia.URL)
+			} else if strings.TrimSpace(st.HeaderMedia.Path) != "" {
+				u, err := buildPublicAssetURL(tenant, renderVars(st.HeaderMedia.Path, vars))
+				if err != nil {
+					return err
+				}
+				headerImageURL = u
+			}
+		}
 
 		// Render vars en secciones/rows (por si lo necesitás)
 		sections := make([]FlowSection, 0, len(st.List.Sections))
@@ -668,7 +755,7 @@ func (r *Renderer) RenderAndSend(tenant string, stateName string, wa *WhatsAppCl
 			sections = append(sections, ns)
 		}
 
-		return wa.sendList(to, header, bodyText, footer, button, sections)
+		return wa.sendList(to, headerText, headerImageURL, bodyText, footer, button, sections)
 
 	case "interactive_buttons":
 		if st.Buttons == nil {
@@ -681,8 +768,22 @@ func (r *Renderer) RenderAndSend(tenant string, stateName string, wa *WhatsAppCl
 		}
 		bodyText = renderVars(bodyText, vars)
 
-		header := renderVars(st.Buttons.Header, vars)
+		headerText := renderVars(st.Buttons.Header, vars)
 		footer := renderVars(st.Buttons.Footer, vars)
+
+		// Optional: header media (image) for interactive messages
+		headerImageURL := ""
+		if st.HeaderMedia != nil && strings.EqualFold(st.HeaderMedia.Type, "image") {
+			if strings.TrimSpace(st.HeaderMedia.URL) != "" {
+				headerImageURL = strings.TrimSpace(st.HeaderMedia.URL)
+			} else if strings.TrimSpace(st.HeaderMedia.Path) != "" {
+				u, err := buildPublicAssetURL(tenant, renderVars(st.HeaderMedia.Path, vars))
+				if err != nil {
+					return err
+				}
+				headerImageURL = u
+			}
+		}
 
 		btns := make([]FlowButton, 0, len(st.Buttons.Buttons))
 		for _, b := range st.Buttons.Buttons {
@@ -692,7 +793,7 @@ func (r *Renderer) RenderAndSend(tenant string, stateName string, wa *WhatsAppCl
 			})
 		}
 
-		return wa.sendButtons(to, header, bodyText, footer, btns)
+		return wa.sendButtons(to, headerText, headerImageURL, bodyText, footer, btns)
 
 	default:
 		return fmt.Errorf("tipo de estado no soportado: %s", st.Type)
@@ -906,6 +1007,55 @@ func (a *App) processMessage(tenant string, state string, msg IncomingMessage) (
 }
 
 // ---------------------
+// Tenant assets (served from /configs/{tenant}/assets/* via public route)
+// ---------------------
+
+func (a *App) handleTenantAssets(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	// URL: /tenants/{tenant}/assets/{path}
+	path := strings.TrimPrefix(r.URL.Path, "/tenants/")
+	parts := strings.SplitN(path, "/", 3)
+	if len(parts) != 3 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	tenant := parts[0]
+	if parts[1] != "assets" {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	rel := parts[2]
+	rel = strings.TrimPrefix(rel, "/")
+	clean := filepath.Clean(rel)
+	if clean == "." || strings.HasPrefix(clean, "..") || strings.Contains(clean, string(filepath.Separator)+".."+string(filepath.Separator)) {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	baseDir := filepath.Join(configRoot, tenant, "assets")
+	filePath := filepath.Join(baseDir, clean)
+
+	// Prevent path traversal
+	absBase, err1 := filepath.Abs(baseDir)
+	absFile, err2 := filepath.Abs(filePath)
+	if err1 != nil || err2 != nil || !strings.HasPrefix(absFile, absBase+string(filepath.Separator)) && absFile != absBase {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	// Set content type if possible
+	if ct := mime.TypeByExtension(filepath.Ext(absFile)); ct != "" {
+		w.Header().Set("Content-Type", ct)
+	}
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	http.ServeFile(w, r, absFile)
+}
+
+// ---------------------
 // main
 // ---------------------
 
@@ -918,6 +1068,7 @@ func main() {
 	}
 
 	http.HandleFunc("/webhook", app.handleWebhook)
+	http.HandleFunc("/tenants/", app.handleTenantAssets)
 
 	port := os.Getenv("PORT")
 	if port == "" {

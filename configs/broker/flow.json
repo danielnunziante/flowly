@@ -15,6 +15,10 @@
       "on_select_next": {
         "SOY_CLIENTE": "CLIENT_MENU",
         "NO_SOY_CLIENTE": "ABOUT_COBERSER"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "menu_header.png"
       }
     },
 
@@ -158,6 +162,10 @@
       "on_select_next": {
         "OTRO_SERVICIO": "ABOUT_COBERSER",
         "FIN": "END"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "quote_in_progress.png"
       }
     },
 
@@ -175,6 +183,10 @@
       "on_select_next": {
         "OTRO_SERVICIO": "ABOUT_COBERSER",
         "FIN": "END"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "quote_in_progress.png"
       }
     },
 
@@ -192,6 +204,10 @@
       "on_select_next": {
         "OTRO_SERVICIO": "ABOUT_COBERSER",
         "FIN": "END"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "quote_in_progress.png"
       }
     },
 
@@ -314,6 +330,10 @@
       "on_select_next": {
         "CLAIM_URGENT_YES": "CLAIM_URGENT_TEXT",
         "CLAIM_URGENT_NO": "CLAIM_TYPE"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "claim_urgent.png"
       }
     },
 
@@ -413,6 +433,10 @@
       "on_select_next": {
         "VOLVER_CLIENT_MENU": "CLIENT_MENU",
         "FIN": "END"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "claim_in_process.png"
       }
     },
 
@@ -501,6 +525,10 @@
         "VOLVER_CLIENT_MENU": "CLIENT_MENU",
         "CASE_REVIEW": "CASE_REVIEW_TEXT",
         "HUMANO_LAST": "HUMANO"
+      },
+      "header_media": {
+        "type": "image",
+        "path": "human_support.png"
       }
     },
 
