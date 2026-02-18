@@ -1,100 +1,226 @@
 {
-    "version": "1.0",
-    "states": {
-        "MENU": {
-            "type": "text",
-            "body": "Hola {{name}} 👋 bienvenido a *Clínica Demo Flowly*.\n\nAguarda un instante, estoy verificando si sos paciente...",
-            "on_text_next": "ROUTER_CRM"
-        },
-        "ROUTER_CRM": {
-            "type": "interactive_buttons",
-            "action": "mock_crm_lookup",
-            "body": "Sistema: Verificación completada.\nResultado: ¿Es cliente? {{is_client}}\nNombre registrado: {{client_name}}\n\n(Este mensaje es interno para debug, ahora derivamos al usuario)",
-            "buttons": {
-                "footer": "Debug Mode",
-                "buttons": [
-                    {
-                        "id": "NEXT",
-                        "title": "Continuar"
-                    }
-                ]
-            },
-            "on_select_next": {
-                "NEXT": "WELCOME_LOGIC"
-            }
-        },
-        "WELCOME_LOGIC": {
-            "type": "interactive_buttons",
-            "body": "Hola de nuevo {{client_name}}. ¿En qué te podemos ayudar hoy?",
-            "buttons": {
-                "footer": "Seleccioná una opción",
-                "buttons": [
-                    {
-                        "id": "AGENDAR",
-                        "title": "📅 Nuevo Turno"
-                    },
-                    {
-                        "id": "URGENCIA",
-                        "title": "🚨 Urgencia"
-                    }
-                ]
-            },
-            "on_select_next": {
-                "AGENDAR": "SELECT_DATE",
-                "URGENCIA": "HUMAN_HANDOFF"
-            }
-        },
-        "SELECT_DATE": {
-            "type": "interactive_list",
-            "action": "get_calendar_slots",
-            "body": "Perfecto, estos son los turnos disponibles traídos de Google Calendar (Simulado):",
-            "list": {
-                "header": "Agenda",
-                "footer": "Horarios disponibles",
-                "button_text": "Ver horarios",
-                "sections": [
-                    {
-                        "title": "Próximos turnos",
-                        "rows": [
-                            {
-                                "id": "SLOT_1",
-                                "title": "Opción 1",
-                                "description": "{{slot_1}}"
-                            },
-                            {
-                                "id": "SLOT_2",
-                                "title": "Opción 2",
-                                "description": "{{slot_2}}"
-                            },
-                            {
-                                "id": "SLOT_3",
-                                "title": "Opción 3",
-                                "description": "{{slot_3}}"
-                            }
-                        ]
-                    }
-                ]
-            },
-            "on_select_next": {
-                "SLOT_1": "CONFIRM_APPOINTMENT",
-                "SLOT_2": "CONFIRM_APPOINTMENT",
-                "SLOT_3": "CONFIRM_APPOINTMENT"
-            }
-        },
-        "CONFIRM_APPOINTMENT": {
-            "type": "text",
-            "action": "schedule_appointment",
-            "body": "✅ ¡Listo! Turno confirmado.\n\nPaciente: {{name}}\nFecha (ISO): {{appointment_confirm_time}}\n\nTe llegará la invitación de Google Calendar a tu email si lo tenemos, o un recordatorio por acá.",
-            "on_text_next": "END"
-        },
-        "HUMAN_HANDOFF": {
-            "type": "text",
-            "body": "Entendido. Estoy derivando tu caso a un agente humano 👤.\n\nUn asesor te escribirá desde este mismo chat en breve.",
-            "on_text_next": "END"
-        },
-        "END": {
-            "type": "text",
-            "body": "Gracias por usar la demo de Flowly."
-        }
+  "version": "1.0",
+  "states": {
+    "MENU": {
+      "type": "interactive_buttons",
+      "header_media": {
+        "type": "image",
+        "path": "header_welcome.png"
+      },
+      "body": "Hola *{{name}}* 👋\n\nSoy el asistente de **Flowly**. En este demo podrás ver cómo gestionamos clientes, turnos y contenido multimedia de forma automatizada.\n\nPodés ir seleccionando las distintas opciones para navegar por el menú de prueba.",
+      "buttons": {
+        "footer": "Flowly Demo v1.0",
+        "buttons": [
+          {
+            "id": "BTN_START",
+            "title": "🚀 Empezar demo"
+          }
+        ]
+      },
+      "on_select_next": {
+        "BTN_START": "SEGMENTATION"
+      }
+    },
+    "SEGMENTATION": {
+      "type": "interactive_buttons",
+      "body": "Bienvenido a la demo.\n\nContanos, ¿Ya sos cliente registrado o querés información?",
+      "buttons": {
+        "buttons": [
+          {
+            "id": "BTN_ROLE_CLIENT",
+            "title": "👤 Sí, soy cliente"
+          },
+          {
+            "id": "BTN_ROLE_INFO",
+            "title": "🏢 No, quiero info"
+          }
+        ]
+      },
+      "on_select_next": {
+        "BTN_ROLE_CLIENT": "CLIENT_LOGIN_INPUT",
+        "BTN_ROLE_INFO": "INFO_MENU"
+      }
+    },
+    "INFO_MENU": {
+      "type": "interactive_list",
+      "body": "¡Excelente! Flowly reduce el tiempo de atención permitiendo que tu personal se enfoque en tareas clave.\n\nDecime, ¿Sobre cuál de estos temas quisieras más información?",
+      "list": {
+        "header": "Flowly Demo",
+        "button_text": "Ver Opciones",
+        "footer": "Seleccioná un tema",
+        "sections": [
+          {
+            "title": "Funciones Principales",
+            "rows": [
+              {
+                "id": "OPT_CRM",
+                "title": "Conexión CRM",
+                "description": "Integración base de datos"
+              },
+              {
+                "id": "OPT_AGENDA",
+                "title": "Manejo de Agenda",
+                "description": "Turnos y recordatorios"
+              }
+            ]
+          },
+          {
+            "title": "Multimedia & Pagos",
+            "rows": [
+              {
+                "id": "OPT_PDF",
+                "title": "Envío de Archivos",
+                "description": "PDF, Docs, Imágenes"
+              },
+              {
+                "id": "OPT_PAGOS",
+                "title": "Pagos",
+                "description": "Integración pasarelas"
+              },
+              {
+                "id": "OPT_HANDOFF",
+                "title": "Asistencia Humana",
+                "description": "Derivación a agente"
+              }
+            ]
+          }
+        ]
+      },
+      "on_select_next": {
+        "OPT_PDF": "DEMO_PDF",
+        "OPT_CRM": "EXPLAIN_CRM",
+        "OPT_AGENDA": "EXPLAIN_AGENDA",
+        "OPT_PAGOS": "EXPLAIN_PAGOS",
+        "OPT_HANDOFF": "DEMO_HANDOFF"
+      }
+    },
+    "CLIENT_LOGIN_INPUT": {
+      "type": "text",
+      "body": "Perfecto {{name}} 🔎.\n\nEscribí tu DNI **sin puntos ni espacios** para buscarte en nuestra base de clientes.\n\n_(Tip demo: escribí '1234')_",
+      "on_text_next": "CLIENT_DASHBOARD"
+    },
+    "CLIENT_DASHBOARD": {
+      "type": "interactive_buttons",
+      "action": "mock_crm_lookup",
+      "header_media": {
+        "type": "image",
+        "path": "header_dashboard.png"
+      },
+      "body": "¿Cómo estás **{{client_name}}**? Un gusto volver a hablar con vos.\n\nContame, ¿Sobre qué tema querés consultar hoy?",
+      "buttons": {
+        "buttons": [
+          {
+            "id": "BTN_AGENDAR",
+            "title": "📅 Agendar Turno"
+          },
+          {
+            "id": "BTN_PAGAR",
+            "title": "💳 Pagar Cuota"
+          },
+          {
+            "id": "BTN_LOGOUT",
+            "title": "🔓 Salir"
+          }
+        ]
+      },
+      "on_select_next": {
+        "BTN_AGENDAR": "SELECT_DATE",
+        "BTN_PAGAR": "CLIENT_PAGOS_MOCK",
+        "BTN_LOGOUT": "MENU"
+      }
+    },
+    "SELECT_DATE": {
+      "type": "interactive_list",
+      "action": "get_calendar_slots",
+      "body": "Perfecto, estos son los próximos turnos disponibles:",
+      "list": {
+        "header": "Agenda",
+        "button_text": "Ver horarios",
+        "footer": "Horarios disponibles",
+        "sections": [
+          {
+            "title": "Próximos turnos",
+            "rows": [
+              {
+                "id": "SLOT_1",
+                "title": "Opción 1",
+                "description": "{{slot_1}}"
+              },
+              {
+                "id": "SLOT_2",
+                "title": "Opción 2",
+                "description": "{{slot_2}}"
+              },
+              {
+                "id": "SLOT_3",
+                "title": "Opción 3",
+                "description": "{{slot_3}}"
+              }
+            ]
+          }
+        ]
+      },
+      "on_select_next": {
+        "SLOT_1": "CONFIRM_APPOINTMENT",
+        "SLOT_2": "CONFIRM_APPOINTMENT",
+        "SLOT_3": "CONFIRM_APPOINTMENT"
+      }
+    },
+    "CONFIRM_APPOINTMENT": {
+      "type": "text",
+      "action": "schedule_appointment",
+      "body": "✅ ¡Listo! Turno confirmado.\n\nPaciente: {{client_name}}\nFecha (ISO): {{appointment_confirm_time}}\n\nTe llegará un recordatorio por este chat.",
+      "on_text_next": "CLIENT_DASHBOARD"
+    },
+    "DEMO_PDF": {
+      "type": "text",
+      "body": "Acá tenés el archivo solicitado 📄. El sistema puede enviar presupuestos o estudios automáticamente.\n\nArchivo demo: https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+      "on_text_next": "RETURN_MENU"
+    },
+    "EXPLAIN_CRM": {
+      "type": "text",
+      "body": "🤖 **CRM Connect**\n\nNos conectamos a tu API para leer y escribir datos. Identificamos al cliente por su teléfono o DNI para darle un trato personalizado.",
+      "on_text_next": "RETURN_MENU"
+    },
+    "EXPLAIN_AGENDA": {
+      "type": "text",
+      "body": "📅 **Agenda Inteligente**\n\nNos integramos con Google Calendar o tu sistema de turnos. El bot lee horarios disponibles en tiempo real y agenda sin intervención humana.",
+      "on_text_next": "RETURN_MENU"
+    },
+    "EXPLAIN_PAGOS": {
+      "type": "text",
+      "body": "💳 **Pasarela de Pagos**\n\nPodemos generar links de pago de MercadoPago o Stripe y enviarlos en el chat. Al confirmar el pago, el bot puede emitir la factura.",
+      "on_text_next": "RETURN_MENU"
+    },
+    "DEMO_HANDOFF": {
+      "type": "text",
+      "body": "👨‍💻 **Derivación Humana**\n\nEl bot se pausa y notifica a tu equipo de atención. Toda la conversación previa queda disponible para el agente.",
+      "on_text_next": "RETURN_MENU"
+    },
+    "CLIENT_PAGOS_MOCK": {
+      "type": "text",
+      "body": "💰 **Estado de Cuenta**\n\nTenés una factura pendiente. Podés pagarla acá:\nhttps://link.mercadopago.com.ar/demo",
+      "on_text_next": "CLIENT_DASHBOARD"
+    },
+    "RETURN_MENU": {
+      "type": "interactive_buttons",
+      "body": "¿Querés ver algo más?",
+      "buttons": {
+        "buttons": [
+          {
+            "id": "BTN_BACK_INFO",
+            "title": "🔙 Ver Menú"
+          },
+          {
+            "id": "BTN_RESTART",
+            "title": "🏠 Inicio"
+          }
+        ]
+      },
+      "on_select_next": {
+        "BTN_BACK_INFO": "INFO_MENU",
+        "BTN_RESTART": "MENU"
+      }
     }
+  }
 }
